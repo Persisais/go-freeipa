@@ -9,9 +9,12 @@ usage examples and more info. See
 [`developing.md`](https://github.com/ccin2p3/go-freeipa/blob/master/developing.md)
 for information on how this library is generated.
 
+Created this to make Kerberos ticket API authentication, because password auth don't work on my FreeIPA instanse for some reason
+
 ## Features
 
 * Kerberos and password API authentication
+* Kerberos ticket API authentication
 
 ## History and credits
 
