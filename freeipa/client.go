@@ -65,10 +65,13 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
+	"runtime"
 	"strings"
 
 	k5client "github.com/jcmturner/gokrb5/v8/client"
 	k5config "github.com/jcmturner/gokrb5/v8/config"
+	"github.com/jcmturner/gokrb5/v8/credentials"
 	"github.com/jcmturner/gokrb5/v8/keytab"
 	"github.com/jcmturner/gokrb5/v8/spnego"
 	"github.com/pkg/errors"
@@ -155,6 +158,64 @@ func ConnectWithKerberos(host string, tspt http.RoundTripper, k5ConnectOpts *Ker
 		return nil, fmt.Errorf("initial login failed: %v", e)
 	}
 	return c, nil
+}
+
+const (
+	DefaultKerbTicket  = "/tmp/krb5cc"
+	DefaultKerbConf    = "/etc/krb5.conf"
+	DefaultKerbConfWin = "C:/ProgramData/MIT/Kerberos5/krb5.ini"
+)
+
+// Connect connects to the FreeIPA server via kerberos ticket and performs an initial login.
+func ConnectWithKerberosTicket(host string, tspt http.RoundTripper) (*Client, error) {
+	jar, e := cookiejar.New(&cookiejar.Options{
+		PublicSuffixList: nil, // this should be fine, since we only use one server
+	})
+	if e != nil {
+		return nil, e
+	}
+
+	kerberosConf := os.Getenv("KRB5_CONFIG")
+	if kerberosConf == "" {
+		if runtime.GOOS == "windows" {
+			kerberosConf = DefaultKerbConfWin
+		} else {
+			kerberosConf = DefaultKerbConf
+		}
+	}
+
+	cfg, err := k5config.Load(kerberosConf)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed load kerberos configuration")
+	}
+
+	kerberosTicketPath := os.Getenv("KRB5CCNAME")
+	if kerberosTicketPath == "" {
+		kerberosTicketPath = DefaultKerbTicket
+	}
+
+	ccache, err := credentials.LoadCCache(kerberosTicketPath)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed load kerberos ticket")
+	}
+
+	k5client, err := k5client.NewFromCCache(ccache, cfg, k5client.AssumePreAuthentication(true))
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed create kerberos client")
+	}
+
+	err = k5client.Login()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed login kerberos client")
+	}
+	return &Client{
+		host: host,
+		hc: &http.Client{
+			Transport: tspt,
+			Jar:       jar,
+		},
+		user:     k5client.Credentials.UserName(),
+		k5client: k5client}, nil
 }
 
 func (c *Client) exec(req *request) (io.ReadCloser, error) {

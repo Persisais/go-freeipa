@@ -4,7 +4,7 @@
 
 A generated golang client for the FreeIPA API.
 
-See the [godoc](https://godoc.org/github.com/persisais/go-freeipa/freeipa) for
+See the [godoc](https://godoc.org/github.com/ccin2p3/go-freeipa/freeipa) for
 usage examples and more info. See
 [`developing.md`](https://github.com/ccin2p3/go-freeipa/blob/master/developing.md)
 for information on how this library is generated.
@@ -36,7 +36,7 @@ Feel free to open [issues](https://github.com/ccin2p3/go-freeipa/issues) or [pul
 
 ### pkg.go.dev website refuses to display documentation
 
-[![pkg.go.dev license restrictions](doc/go_freeipa_doc_license_issue.png)](https://pkg.go.dev/github.com/persisais/go-freeipa/freeipa)
+[![pkg.go.dev license restrictions](doc/go_freeipa_doc_license_issue.png)](https://pkg.go.dev/github.com/ccin2p3/go-freeipa/freeipa)
 
 The official [pkg.go.dev license policy](https://pkg.go.dev/license-policy) does not actually accepts the [CeCILL LICENSE](https://cecill.info/index.en.html) we're using.
 
