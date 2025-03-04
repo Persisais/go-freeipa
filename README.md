@@ -10,11 +10,14 @@ usage examples and more info. See
 for information on how this library is generated.
 
 Created this to make Kerberos ticket API authentication, because password auth don't work on my FreeIPA instanse for some reason
+Also implemented API authentication via password the other way.
+Additions are not very pretty, implemented them for my own use
 
 ## Features
 
 * Kerberos and password API authentication
 * Kerberos ticket API authentication
+* Kerberos API authentication via login password
 
 ## History and credits
 
@@ -25,6 +28,8 @@ This project was initially created by [Philippe Voinov](https://github.com/tehwa
 The initial project is now _archived_ and [unmaintained](https://github.com/tehwalris/go-freeipa#unmaintained).
 
 We want to thank [Philippe Voinov](https://github.com/tehwalris) for all the awesome work he did on this library.
+
+Forked from [CC-IN2P3](https://github.com/ccin2p3/go-freeipa).
 
 ### Future
 

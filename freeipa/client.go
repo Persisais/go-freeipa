@@ -167,7 +167,7 @@ const (
 )
 
 // Connect connects to the FreeIPA server via kerberos ticket and performs an initial login.
-func ConnectWithKerberosTicket(host string, tspt http.RoundTripper) (*Client, error) {
+func ConnectWithKerberosTicket(host string, tspt http.RoundTripper, ticketPath ...string) (*Client, error) {
 	jar, e := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: nil, // this should be fine, since we only use one server
 	})
@@ -189,9 +189,14 @@ func ConnectWithKerberosTicket(host string, tspt http.RoundTripper) (*Client, er
 		return nil, errors.WithMessage(err, "failed load kerberos configuration")
 	}
 
-	kerberosTicketPath := os.Getenv("KRB5CCNAME")
-	if kerberosTicketPath == "" {
-		kerberosTicketPath = DefaultKerbTicket
+	var kerberosTicketPath string
+	if len(ticketPath) > 0 {
+		kerberosTicketPath = ticketPath[0]
+	} else {
+		kerberosTicketPath = os.Getenv("KRB5CCNAME")
+		if kerberosTicketPath == "" {
+			kerberosTicketPath = DefaultKerbTicket
+		}
 	}
 
 	ccache, err := credentials.LoadCCache(kerberosTicketPath)
@@ -215,6 +220,46 @@ func ConnectWithKerberosTicket(host string, tspt http.RoundTripper) (*Client, er
 			Jar:       jar,
 		},
 		user:     k5client.Credentials.UserName(),
+		k5client: k5client}, nil
+}
+
+// Connect connects to the FreeIPA server via kerberos ticket and performs an initial login with user password
+func ConnectWithPassword(host string, tspt http.RoundTripper, user string, password string) (*Client, error) {
+	jar, e := cookiejar.New(&cookiejar.Options{
+		PublicSuffixList: nil, // this should be fine, since we only use one server
+	})
+	if e != nil {
+		return nil, e
+	}
+
+	kerberosConf := os.Getenv("KRB5_CONFIG")
+	if kerberosConf == "" {
+		if runtime.GOOS == "windows" {
+			kerberosConf = DefaultKerbConfWin
+		} else {
+			kerberosConf = DefaultKerbConf
+		}
+	}
+
+	cfg, err := k5config.Load(kerberosConf)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed load kerberos configuration")
+	}
+	realm := cfg.Realms[0].Realm
+
+	k5client := k5client.NewWithPassword(user, realm, password, cfg)
+
+	err = k5client.Login()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed login kerberos client")
+	}
+	return &Client{
+		host: host,
+		hc: &http.Client{
+			Transport: tspt,
+			Jar:       jar,
+		},
+		user:     user,
 		k5client: k5client}, nil
 }
 
